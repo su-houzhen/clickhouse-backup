@@ -72,6 +72,39 @@ func filterTablesByPattern(tables []clickhouse.Table, tablePattern string) []cli
 	return result
 }
 
+func filterTablesByEnginePattern(tables []clickhouse.Table, enginePattern string) []clickhouse.Table {
+	if enginePattern == "" {
+		return tables
+	}
+
+	enginePatterns := strings.Split(enginePattern, ",")
+	var result []clickhouse.Table
+	if strings.EqualFold(strings.Trim(enginePatterns[0], " \t\n\r"), "not") {
+		for _, t := range tables {
+			for index, pattern := range enginePatterns {
+				if index == 0 {
+					continue
+				}
+
+				matched, _ := filepath.Match(strings.Trim(pattern, " \t\n\r"), fmt.Sprintf("%s", t.Engine))
+				if !matched {
+					result = addTable(result, t)
+				}
+			}
+		}
+	} else {
+		for _, t := range tables {
+			for _, pattern := range enginePatterns {
+				if matched, _ := filepath.Match(strings.Trim(pattern, " \t\n\r"), fmt.Sprintf("%s", t.Engine)); matched {
+					result = addTable(result, t)
+				}
+			}
+		}
+	}
+
+	return result
+}
+
 // NewBackupName - return default backup name
 func NewBackupName() string {
 	return time.Now().UTC().Format(TimeFormatForBackup)
@@ -79,7 +112,7 @@ func NewBackupName() string {
 
 // CreateBackup - create new backup of all tables matched by tablePattern
 // If backupName is empty string will use default backup name
-func CreateBackup(cfg *config.Config, backupName, tablePattern string, schemaOnly, rbacOnly, configsOnly bool, version string) error {
+func CreateBackup(cfg *config.Config, backupName, tablePattern string, enginePattern string, schemaOnly, rbacOnly, configsOnly bool, version string) error {
 	startBackup := time.Now()
 	doBackupData := !schemaOnly
 	if backupName == "" {
@@ -107,6 +140,7 @@ func CreateBackup(cfg *config.Config, backupName, tablePattern string, schemaOnl
 		return fmt.Errorf("can't get tables from clickhouse: %v", err)
 	}
 	tables := filterTablesByPattern(allTables, tablePattern)
+	tables = filterTablesByEnginePattern(allTables, enginePattern)
 	i := 0
 	for _, table := range tables {
 		if table.Skip {

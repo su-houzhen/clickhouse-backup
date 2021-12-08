@@ -70,14 +70,18 @@ func main() {
 		{
 			Name:        "create",
 			Usage:       "Create new backup",
-			UsageText:   "clickhouse-backup create [-t, --tables=<db>.<table>] [-s, --schema] [--rbac] [--configs] <backup_name>",
+			UsageText:   "clickhouse-backup create [-t, --tables=<db>.<table>] [-e, --engines=<database_engine>] [-s, --schema] [--rbac] [--configs] <backup_name>",
 			Description: "Create new backup",
 			Action: func(c *cli.Context) error {
-				return backup.CreateBackup(getConfig(c), c.Args().First(), c.String("t"), c.Bool("s"), c.Bool("rbac"), c.Bool("configs"), version)
+				return backup.CreateBackup(getConfig(c), c.Args().First(), c.String("t"), c.String("e"), c.Bool("s"), c.Bool("rbac"), c.Bool("configs"), version)
 			},
 			Flags: append(cliapp.Flags,
 				cli.StringFlag{
 					Name:   "table, tables, t",
+					Hidden: false,
+				},
+				cli.StringFlag{
+					Name:   "engine, engines, e",
 					Hidden: false,
 				},
 				cli.BoolFlag{
@@ -100,15 +104,19 @@ func main() {
 		{
 			Name:        "create_remote",
 			Usage:       "Create and upload",
-			UsageText:   "clickhouse-backup create_remote [-t, --tables=<db>.<table>] [--diff-from=<local_backup_name>] [--schema] [--rbac] [--configs] <backup_name>",
+			UsageText:   "clickhouse-backup create_remote [-t, --tables=<db>.<table>] [-e, --engines=<database_engine>] [--diff-from=<local_backup_name>] [--schema] [--rbac] [--configs] <backup_name>",
 			Description: "Create and upload",
 			Action: func(c *cli.Context) error {
 				b := backup.NewBackuper(getConfig(c))
-				return b.CreateToRemote(c.Args().First(), c.String("t"), c.String("diff-from"), c.Bool("s"), c.Bool("rbac"), c.Bool("configs"), version)
+				return b.CreateToRemote(c.Args().First(), c.String("t"), c.String("e"), c.String("diff-from"), c.Bool("s"), c.Bool("rbac"), c.Bool("configs"), version)
 			},
 			Flags: append(cliapp.Flags,
 				cli.StringFlag{
 					Name:   "table, tables, t",
+					Hidden: false,
+				},
+				cli.StringFlag{
+					Name:   "engine, engines, e",
 					Hidden: false,
 				},
 				cli.StringFlag{
